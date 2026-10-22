@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lab Pickleball – Availability</title>
+<style>
+:root{--bg:#f6f7f3;--card:#fff;--ink:#1c1f1a;--mut:#6b7168;--line:#e0e3da;--acc:#2f7d4f;--soft:#dcefe3;--onacc:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131612;--card:#1c201a;--ink:#eef0ea;--mut:#9aa196;--line:#2c3129;--acc:#5fc183;--soft:#24402e;--onacc:#0d1a11}}
+:root[data-theme="dark"]{--bg:#131612;--card:#1c201a;--ink:#eef0ea;--mut:#9aa196;--line:#2c3129;--acc:#5fc183;--soft:#24402e;--onacc:#0d1a11}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 14px 40px}
+h1{font-size:22px;margin:0 0 4px}
+p.sub{margin:0 0 16px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:600}
+.wrap{overflow-x:auto}
+#grid{display:grid;grid-template-columns:52px repeat(9,minmax(34px,1fr));gap:3px;min-width:400px;touch-action:none;user-select:none;-webkit-user-select:none}
+.c{display:flex;align-items:center;justify-content:center;font-size:12px;min-height:30px;border-radius:6px}
+.hd{color:var(--mut);font-weight:600;min-height:34px;font-size:11px;line-height:1.2;text-align:center}
+.tm{color:var(--mut);justify-content:flex-end;padding-right:6px;font-size:11px}
+.cell{background:var(--bg);border:1px solid var(--line);cursor:pointer}
+.cell.on{background:var(--acc);border-color:var(--acc)}
+.cell.hot{color:var(--onacc);font-weight:600}
+.cell.sel{outline:2px solid var(--ink)}
+button.go{padding:10px 16px;border-radius:10px;border:0;background:var(--acc);color:var(--onacc);font:inherit;font-weight:600;cursor:pointer}
+button.alt{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+textarea{width:100%;min-height:70px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:12px/1.4 ui-monospace,Menlo,monospace}
+.msg{margin:10px 0 0;color:var(--mut);min-height:20px}
+.chip{display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;border-radius:99px;background:var(--soft);font-size:13px}
+.hide{display:none}
+h2{font-size:15px;margin:0 0 8px}
+.best div{padding:6px 0;border-top:1px solid var(--line)}
+.best div:first-child{border-top:0}
+.legend{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:12px;margin-top:10px}
+.bar{flex:1;max-width:140px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--card),var(--acc));border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Lab pickleball: when can you play?</h1>
+  <p class="sub">Add your name, paint the times you’re free, then check the Everyone tab to see where schedules overlap.</p>
+
+  <div class="card">
+    <input id="name" type="text" placeholder="Your name" autocomplete="name">
+  </div>
+
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="t-mine" role="tab" aria-selected="true">My availability</button>
+      <button class="tab" id="t-all" role="tab" aria-selected="false">Everyone</button>
+    </div>
+    <div class="wrap"><div id="grid"></div></div>
+    <div id="legend" class="legend hide"><span>Fewer</span><div class="bar"></div><span>More people</span></div>
+    <p id="hint" class="msg">Tap or drag across cells to mark when you’re free.</p>
+  </div>
+
+  <div id="mineTools" class="card">
+    <button class="go" id="save">Save my times</button>
+    <p id="msg" class="msg"></p>
+    <div id="codeBox" class="hide">
+      <p class="msg" style="margin-top:0">Your reply code (send this back if saving here doesn’t work):</p>
+      <textarea id="code" readonly></textarea>
+      <button class="alt" id="copy" style="margin-top:8px">Copy code</button>
+    </div>
+  </div>
+
+  <div id="allTools" class="hide">
+    <div class="card best"><h2>Best times</h2><div id="best"></div></div>
+    <div class="card">
+      <h2>Responses (<span id="n">0</span>)</h2>
+      <div id="people"></div>
+      <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--mut)">Add replies from email</summary>
+        <p class="msg">Paste any reply codes people sent you, one per line.</p>
+        <textarea id="paste" placeholder="PB1|Name|hexcode"></textarea>
+        <button class="alt" id="add" style="margin-top:8px">Add to view</button>
+      </details>
+    </div>
+  </div>
+</main>
+
+<script>
+const DAYS=['Sat 10/24','Sun 10/25','Mon 10/26','Tue 10/27','Wed 10/28','Thu 10/29','Fri 10/30','Sat 10/31','Sun 11/1'];
+const ND=DAYS.length;
+const HOURS=[7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+const NBITS=DAYS.length*HOURS.length, HEXLEN=Math.ceil(NBITS/4);
+const $=s=>document.querySelector(s);
+const fmt=h=>(h%12||12)+(h<12?' AM':' PM');
+const slotName=i=>DAYS[i%ND]+' '+fmt(HOURS[Math.floor(i/ND)]);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let tab='mine', mine=new Set(), dbRows={}, pasted={}, db=null, uid=null, down=false, paintOn=true, selCell=null;
+
+const grid=$('#grid');
+let h='<div class="c hd"></div>'+DAYS.map(d=>'<div class="c hd"><span>'+d.replace(' ','<br>')+'</span></div>').join('');
+HOURS.forEach((hr,r)=>{h+='<div class="c tm">'+fmt(hr)+'</div>';for(let c=0;c<ND;c++)h+='<div class="c cell" data-i="'+(r*ND+c)+'"></div>'});
+grid.innerHTML=h;
+const cells=[...grid.querySelectorAll('.cell')];
+
+function encode(name,slots){
+  const bits=Array(HEXLEN*4).fill('0');slots.forEach(i=>bits[i]='1');
+  let hex='';for(let i=0;i<bits.length;i+=4)hex+=parseInt(bits.slice(i,i+4).join(''),2).toString(16);
+  return 'PB1|'+name.replace(/\|/g,'/')+'|'+hex;
+}
+function decode(line){
+  const m=line.trim().match(/^PB1\|([^|]+)\|([0-9a-f]+)$/i);if(!m)return null;
+  const s=new Set(),bits=m[2].split('').map(x=>parseInt(x,16).toString(2).padStart(4,'0')).join('');
+  for(let i=0;i<NBITS;i++)if(bits[i]==='1')s.add(i);
+  return {name:m[1].trim(),slots:s};
+}
+function people(){
+  const m={...dbRows,...pasted};
+  const nm=$('#name').value.trim();
+  if(nm&&mine.size)m[nm]=new Set(mine);
+  return m;
+}
+function paint(){
+  const P=people(),names=Object.keys(P),T=Math.max(names.length,1);
+  cells.forEach(el=>{
+    const i=+el.dataset.i;
+    el.classList.toggle('sel',tab==='all'&&selCell===i);
+    if(tab==='mine'){el.classList.toggle('on',mine.has(i));el.classList.remove('hot');el.style.background='';el.textContent='';el.title='';return;}
+    const w=names.filter(n=>P[n].has(i));
+    el.classList.remove('on');
+    el.classList.toggle('hot',w.length/T>0.5);
+    el.textContent=w.length||'';
+    el.style.background=w.length?'color-mix(in srgb, var(--acc) '+Math.round(100*w.length/T)+'%, var(--card))':'';
+    el.title=w.join(', ');
+  });
+  if(tab==='all')renderAll(P,names);
+}
+function renderAll(P,names){
+  $('#n').textContent=names.length;
+  $('#people').innerHTML=names.length?names.map(n=>'<span class="chip">'+esc(n)+'</span>').join(''):'<span class="msg">No responses yet.</span>';
+  const counts=cells.map(el=>{const i=+el.dataset.i;return {i,w:names.filter(n=>P[n].has(i))}}).filter(x=>x.w.length>0).sort((a,b)=>b.w.length-a.w.length||a.i-b.i);
+  const top=counts.slice(0,4);
+  $('#best').innerHTML=top.length?top.map(x=>'<div><b>'+slotName(x.i)+'</b> · '+x.w.length+' of '+names.length+'<br><span class="msg" style="margin:0">'+x.w.map(esc).join(', ')+'</span></div>').join(''):'<span class="msg">Times will show up here once people respond.</span>';
+}
+function setTab(t){
+  tab=t;
+  $('#t-mine').setAttribute('aria-selected',t==='mine');$('#t-all').setAttribute('aria-selected',t==='all');
+  $('#mineTools').classList.toggle('hide',t!=='mine');$('#allTools').classList.toggle('hide',t!=='all');
+  $('#legend').classList.toggle('hide',t!=='all');
+  $('#hint').textContent=t==='mine'?'Tap or drag across cells to mark when you’re free.':'Numbers show how many people are free. Tap a cell to see who.';
+  selCell=null;paint();
+}
+$('#t-mine').onclick=()=>setTab('mine');$('#t-all').onclick=()=>setTab('all');
+$('#name').addEventListener('input',paint);
+
+function setCell(i){paintOn?mine.add(i):mine.delete(i);paint();}
+grid.addEventListener('pointerdown',e=>{
+  const el=e.target.closest('.cell');if(!el)return;
+  const i=+el.dataset.i;
+  if(tab==='all'){selCell=i;paint();const P=people(),names=Object.keys(P),w=names.filter(n=>P[n].has(i)),no=names.filter(n=>!P[n].has(i));
+    $('#hint').textContent=slotName(i)+' — free: '+(w.join(', ')||'nobody')+(no.length?' · not free: '+no.join(', '):'');return;}
+  down=true;paintOn=!mine.has(i);setCell(i);e.preventDefault();
+});
+grid.addEventListener('pointermove',e=>{
+  if(!down||tab!=='mine')return;
+  const el=document.elementFromPoint(e.clientX,e.clientY),c=el&&el.closest&&el.closest('.cell');
+  if(c)setCell(+c.dataset.i);
+});
+addEventListener('pointerup',()=>{down=false});
+addEventListener('pointercancel',()=>{down=false});
+
+function msg(t){$('#msg').textContent=t}
+$('#save').onclick=async()=>{
+  const nm=$('#name').value.trim();
+  if(!nm){msg('Add your name first.');return;}
+  if(!mine.size){msg('Tap at least one time you’re free.');return;}
+  const slots=[...mine].sort((a,b)=>a-b);
+  $('#code').value=encode(nm,slots);$('#codeBox').classList.remove('hide');
+  try{
+    if(!db||!uid)throw new Error('no db');
+    await db.doc('avail/'+uid).set({name:nm,slots});
+    msg('Saved. You’ll appear on the Everyone tab for anyone with the link.');
+  }catch(e){
+    msg('Copy the code below and reply to the email with it. I’ll add your times to the group view.');
+  }
+};
+$('#copy').onclick=async()=>{
+  const t=$('#code');
+  try{await navigator.clipboard.writeText(t.value);msg('Code copied.');}
+  catch(e){t.select();msg('Press copy on your keyboard to grab the code.');}
+};
+$('#add').onclick=()=>{
+  let ok=0;
+  $('#paste').value.split(/\n+/).forEach(l=>{const r=decode(l);if(r){pasted[r.name]=r.slots;ok++;}});
+  $('#paste').value='';paint();
+};
+
+(async()=>{
+  try{
+    db=await claude.use('db');
+    const u=await claude.use('user');
+    if(u&&u.id)uid=await u.id();
+    if(db)db.collection('avail').onSnapshot(snap=>{
+      const r={};
+      snap.docs.forEach(d=>{const v=d.data();if(v&&v.name&&Array.isArray(v.slots))r[v.name]=new Set(v.slots.filter(n=>Number.isInteger(n)&&n>=0&&n<NBITS));});
+      dbRows=r;paint();
+    },()=>{});
+  }catch(e){}
+})();
+paint();
+</script>
+</body>
+</html>
